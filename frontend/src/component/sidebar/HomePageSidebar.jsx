@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { serverURL } from '../../main';
 
 import Koalaliving from '../koalaliving/Koalaliving';
 import Avatar from '../Avatar';
@@ -79,7 +80,7 @@ const HomePageSidebar = () => {
    useEffect(() => {
         const fetchChannels = async () => {
             try {
-                const res = await axios.get("/api/channel/getAllChannel");
+                const res = await axios.get(`${serverURL}/api/channel/getAllChannel`);
                 dispatch(setAllChannels(res.data));
             } catch (err) {
                 console.error("Error fetching channels", err);
@@ -94,7 +95,7 @@ const HomePageSidebar = () => {
         if (!allUsers || allUsers.length === 0) {
             const fetchAllUsers = async () => {
                 try {
-                    const res = await axios.get("/api/user/get");
+                    const res = await axios.get(`${serverURL}/api/user/get`);
                     dispatch(setAllUsers(res.data));
                 } catch (err) {
                     console.error("Failed to fetch all users:", err);
@@ -123,8 +124,8 @@ const HomePageSidebar = () => {
  const openChat = async (otherId) => {
         if (!me?._id) return;
         try {
-            await axios.post("/api/conversation/", { senderId: me._id, receiverId: otherId });
-            await axios.put(`/api/conversation/mark-read/${otherId}`);
+            await axios.post(`${serverURL}/api/conversation/`, { senderId: me._id, receiverId: otherId });
+            await axios.put(`${serverURL}/api/conversation/mark-read/${otherId}`);
             dispatch(fetchConversations());
             navigate(`/dm/${otherId}`);
         } catch (err) {

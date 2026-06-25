@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUnreadConversations, fetchConversations } from "../redux/conversationSlice";
 import axios from "axios";
+import { serverURL } from '../main';
 import Avatar from "../component/Avatar"; 
 
 const Topbar = () => {
@@ -28,7 +29,7 @@ const Topbar = () => {
   const openChat = async (otherId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`/api/conversation/read/${otherId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${serverURL}/api/conversation/read/${otherId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       dispatch(fetchConversations());
     } catch (err) {
       console.error("Failed to mark as read:", err);

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../redux/userSlice";
+import { serverURL } from '../main';
 
 const Registration = () => {
   const [name, setName] = useState("");
@@ -21,7 +22,7 @@ const Registration = () => {
     setError(""); 
 
     try {
-      const result = await axios.post("/api/user/register", {
+      const result = await axios.post(`${serverURL}/api/user/register`, {
         name,
         email,
         password,

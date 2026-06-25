@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../redux/userSlice";
+import { serverURL } from '../main';
 
 const Login = () => {
   const [isActive, setIsActive] = useState(false);
@@ -19,7 +20,7 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   console.log({ email, password });
   try {
-    const res = await axios.post("/api/user/login", {
+    const res = await axios.post(`${serverURL}/api/user/login`, {
   email,
   password,
 });

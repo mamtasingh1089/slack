@@ -81,7 +81,7 @@ const FullProfile = () => {
         if (uploadFile) fd.append("avatar", uploadFile);
 
         const token = localStorage.getItem("token");
-        const res = await axios.put(`/api/user/edit/${singleUser._id}`, fd, {
+        const res = await axios.put(`${serverURL}/api/user/edit/${singleUser._id}`, fd, {
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
         });
 

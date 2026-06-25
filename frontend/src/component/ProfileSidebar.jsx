@@ -78,7 +78,7 @@ const ProfileSidebar = ({ user, onClose }) => {
             Object.keys(form).forEach(key => fd.append(key === 'title' ? 'role' : key, form[key])); 
             if (uploadFile) fd.append("avatar", uploadFile);
 
-            const res = await axios.put(`/api/user/edit/${user._id}`, fd, {
+            const res = await axios.put(`${serverURL}/api/user/edit/${user._id}`, fd, {
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
             });
 

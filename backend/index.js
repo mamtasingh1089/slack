@@ -24,11 +24,9 @@ import preferenceRouter from "./router/preference.router.js";
 import startScheduler from "./scheduler.js";
 app.use(
   cors({
-    origin: [
-      "http://localhost:5174",
-      "http://localhost:5173",
-      // "https://slack-frontend-4.onrender.com"
-    ],
+    origin: process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(',')
+      : ["http://localhost:5174", "http://localhost:5173"],
     credentials: true,
   })
 );

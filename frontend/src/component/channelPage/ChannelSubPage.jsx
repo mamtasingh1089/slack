@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { serverURL } from '../../main';
 
 // --- Icon Imports ---
 // Ensure you have the 'react-icons' library installed: npm install react-icons
@@ -63,8 +64,8 @@ const ChannelSubPage = ({ channel, onClose }) => {
     const handleSaveTopic = async () => {
         setIsSaving(true);
         try {
-            await axios.patch(`/api/channel/${channel._id}`, { topic: currentTopic });
-            const res = await axios.get('/api/channel/getAllChannel');
+            await axios.patch(`${serverURL}/api/channel/${channel._id}`, { topic: currentTopic });
+            const res = await axios.get(`${serverURL}/api/channel/getAllChannel`);
             dispatch(setAllChannels(res.data));
             setOpenEditTopic(false);
         } catch (error) {
@@ -83,8 +84,8 @@ const ChannelSubPage = ({ channel, onClose }) => {
     const handleLeaveChannel = async () => {
         if (window.confirm(`Are you sure you want to leave #${channel.name}?`)) {
             try {
-                await axios.delete(`/api/channel/${channel._id}/members/me`);
-                const res = await axios.get('/api/channel/getAllChannel');
+                await axios.delete(`${serverURL}/api/channel/${channel._id}/members/me`);
+                const res = await axios.get(`${serverURL}/api/channel/getAllChannel`);
                 dispatch(setAllChannels(res.data));
                 alert(`You have left #${channel.name}.`);
                 onClose();

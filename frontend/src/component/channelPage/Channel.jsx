@@ -1,4 +1,5 @@
 import axios from "axios";
+import { serverURL } from '../../main';
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -70,7 +71,7 @@ const Channel = () => {
     if (!channelId || !user?._id) return;
     const markRead = async () => {
       try {
-        await axios.post(`/api/channel/${channelId}/read`, {}, { withCredentials: true });
+        await axios.post(`${serverURL}/api/channel/${channelId}/read`, {}, { withCredentials: true });
         dispatch(resetChannelUnread({ channelId, userId: user._id }));
       } catch (error) {
         console.error("Error marking channel read:", error);
@@ -120,7 +121,7 @@ const Channel = () => {
         if (!channelId) return;
         setLoading(true);
         dispatch(clearChannelMessages());
-        const res = await axios.get(`/api/channel/${channelId}/messages`, { withCredentials: true });
+        const res = await axios.get(`${serverURL}/api/channel/${channelId}/messages`, { withCredentials: true });
         dispatch(setChannelMessages(res.data));
       } catch (error) {
         console.error("Error fetching channel messages:", error);
@@ -214,7 +215,7 @@ const Channel = () => {
   }
 
   try {
-    await axios.post(`/api/channel/${channelId}/messages`, formData, {
+    await axios.post(`${serverURL}/api/channel/${channelId}/messages`, formData, {
       withCredentials: true,
       headers: {
         "Content-Type": "multipart/form-data",
@@ -267,7 +268,7 @@ const handleKeyDown = (e) => {
     setSaving(true);
     try {
       const payload = { topic };
-      await axios.put(`/api/conversation/topic/with/${user._id}`, payload);
+      await axios.put(`${serverURL}/api/conversation/topic/with/${user._id}`, payload);
       setOpenEditTopic(false);
     } catch (error) {
       console.error("Error updating topic:", error);

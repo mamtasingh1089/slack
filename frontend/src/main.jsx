@@ -5,7 +5,7 @@ import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import store from "./redux/store";
 import App from "./App";
-export const serverURL='http://localhost:5001';
+export const serverURL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>

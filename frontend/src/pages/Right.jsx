@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSingleUser } from "../redux/userSlice";
 import { setMessages, clearMessages } from "../redux/messageSlice";
 import { fetchConversations } from "../redux/conversationSlice";
+import { serverURL } from '../main';
 import SenderMessage from "./SenderMessage";
 import ReceiverMessage from "./ReceiverMessage";
 import Home from '../component/Home';
@@ -117,7 +118,7 @@ const Right = () => {
   const fetchUser = async () => {
     if (!id) return;
     try {
-      const res = await axios.get(`/api/user/${id}`, authHeaders());
+      const res = await axios.get(`${serverURL}/api/user/${id}`, authHeaders());
       dispatch(setSingleUser(res.data));
     } catch (error) {
       console.error("Error fetching single user:", error);
@@ -128,7 +129,7 @@ const Right = () => {
   const fetchMessages = async () => {
     if (!id) return;
     try {
-      const res = await axios.get(`/api/message/getAll/${id}`, authHeaders());
+      const res = await axios.get(`${serverURL}/api/message/getAll/${id}`, authHeaders());
       dispatch(setMessages(Array.isArray(res.data) ? res.data : []));
     } catch (error) {
       console.error("Error fetching messages", error);
@@ -138,7 +139,7 @@ const Right = () => {
   const markThreadAsRead = async () => {
     if (!id) return;
     try {
-      await axios.post(`/api/conversation/read/${id}`, {}, authHeaders());
+      await axios.post(`${serverURL}/api/conversation/read/${id}`, {}, authHeaders());
       dispatch(fetchConversations());
     } catch (error) {
       console.error("Failed to mark thread as read", error);
@@ -149,7 +150,7 @@ const Right = () => {
     if (!newMsg.trim() || !singleUser?._id) return;
     setLoading(true);
     try {
-      await axios.post(`/api/message/send/${singleUser._id}`, { message: newMsg }, authHeaders());
+      await axios.post(`${serverURL}/api/message/send/${singleUser._id}`, { message: newMsg }, authHeaders());
       setNewMsg("");
     } catch (error) {
       console.error("Error sending message", error);
@@ -173,7 +174,7 @@ const Right = () => {
     setSaving(true);
     try {
       const payload = { topic };
-      const res = await axios.put(`/api/conversation/topic/with/${singleUser._id}`, payload, authHeaders());
+      const res = await axios.put(`${serverURL}/api/conversation/topic/with/${singleUser._id}`, payload, authHeaders());
       if (res.data) console.log("Topic updated successfully", res.data);
       setOpenEditTopic(false);
     } catch (error) {
@@ -210,7 +211,7 @@ const Right = () => {
     const participantIds = [singleUser._id, ...selectedUsers.map(u => u._id)];
     try {
       const payload = { participantIds };
-      const res = await axios.post('/api/conversation/group', payload, authHeaders());
+      const res = await axios.post(`${serverURL}/api/conversation/group`, payload, authHeaders());
       if (res.status === 201 && res.data) {
         navigate(`/conversation/${res.data._id}`);
       }

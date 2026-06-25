@@ -8,6 +8,7 @@ import { FaRegEdit, FaEdit } from "react-icons/fa";
 import { TbTriangleInvertedFilled } from "react-icons/tb";
 import { fetchConversations, selectAllConversations } from "../redux/conversationSlice";
 import { setAllUsers } from "../redux/userSlice";
+import { serverURL } from '../main';
 import Koalaliving from "../component/koalaliving/Koalaliving";
 import dp from '../assets/dp.webp'
 import Avatar from "../component/Avatar";
@@ -29,7 +30,7 @@ const Left = () => {
       const fetchAllUsers = async () => {
         try {
           const token = localStorage.getItem("token");
-          const res = await axios.get("/api/user/get", {
+          const res = await axios.get(`${serverURL}/api/user/get`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           dispatch(setAllUsers(res.data));
@@ -73,7 +74,7 @@ const Left = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "/api/conversation/",
+        `${serverURL}/api/conversation/`,
         { senderId: me._id, receiverId: otherId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
