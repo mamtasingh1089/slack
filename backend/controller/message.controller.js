@@ -15,6 +15,9 @@ export const sendMessage = async (req, res) => {
     const { receiverId } = req.params;
     const { message } = req.body;
 
+    // Fetch sender details early so we can use the name for notifications
+    const sender = await User.findById(senderId).select("name profilePic");
+
     // 1. Handle File Uploads
     const filesArray = [];
     if (req.file) {
@@ -49,7 +52,6 @@ export const sendMessage = async (req, res) => {
       files: filesArray,
     };
 
-    // Compatibility for legacy image fields
     if (filesArray.length === 1 && filesArray[0].mimetype?.startsWith("image/")) {
       docToCreate.image = filesArray[0].url;
       docToCreate.imageKey = filesArray[0].key || "";
@@ -57,49 +59,49 @@ export const sendMessage = async (req, res) => {
 
     const newMessage = await Message.create(docToCreate);
 
-    // 3. Update Conversation & Increment Unread Count
-    // This is the core logic for your sidebar badges
+    // 3. Update Conversation
     const updatedConversation = await Conversation.findOneAndUpdate(
       { participants: { $all: [senderId, receiverId] } }, 
       {
         $push: { messages: newMessage._id }, 
-        $inc: { [`unreadCounts.${receiverId}`]: 1 }, // Increment receiver's unread count
+        $inc: { [`unreadCounts.${receiverId}`]: 1 }, 
         lastNotificationSentAt: new Date(),
         updatedAt: new Date(),
       },
       { upsert: true, new: true }
     ).populate("participants", "name email profilePic");
 
-    // 4. Populate message details for frontend
+    // 4. Populate message details
     const populatedNewMessage = await Message.findById(newMessage._id)
       .populate("sender", "name email profilePic");
 
-    // 5. Socket Logic (Real-Time)
+    // 5. Socket Logic
     const receiverSocketIds = getSocketIdsForUser(receiverId);
     const senderSocketIds = getSocketIdsForUser(senderId);
 
     const socketPayload = {
       newMessage: populatedNewMessage,
-      updatedConversation // Frontend uses this to update the Redux store/Sidebar
+      updatedConversation 
     };
 
-    // Send to all sender's active tabs
     senderSocketIds.forEach(sid => io.to(sid).emit("newMessage", socketPayload));
 
-  if (receiverSocketIds.length > 0) {
-    // User online hai: Direct message bhej do
-    receiverSocketIds.forEach(sid => io.to(sid).emit("newMessage", socketPayload));
-} else {
-    // User OFFLINE hai: DB mein notification save karein
-    await Notification.create({
+    if (receiverSocketIds.length > 0) {
+      receiverSocketIds.forEach(sid => io.to(sid).emit("newMessage", socketPayload));
+    } else {
+      // FIX: Use your service OR your Model, but NEVER the 'Notification' browser keyword
+     try {
+    await createAndSendNotification({
         userId: receiverId,
-        type: "personal_message",
+        type: "personal", // Changed from 'personal_message' to 'personal'
         actorId: senderId,
         title: `New message from ${sender.name}`,
         body: message || "Sent a file",
-        delivered: false // Important: isse pata chalega ki deliver nahi hua
     });
+} catch (notifErr) {
+    console.error("Notification Service Error:", notifErr.message);
 }
+    }
 
     return res.status(201).json(populatedNewMessage);
 

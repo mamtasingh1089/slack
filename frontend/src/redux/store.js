@@ -4,7 +4,7 @@ import messageSlice from "./messageSlice";
 import socketSlice from "./SocketSlice";
 import conversationSlice from "./conversationSlice"; 
 import slackUserSlice from './slackUserSlice'
-import workspaceSlice from './workspaceSlice'
+import workspaceReducer from "./workspaceSlice";
 import channelSlice from './channelSlice'
 import activitySlice from './activitySlice'
 import channelMessageSlice from './channelMessageSlice';
@@ -18,7 +18,7 @@ const store = configureStore({
     socket: socketSlice,
     conversations: conversationSlice, 
     slackUser:slackUserSlice,
-    workspace:workspaceSlice,
+     workspace: workspaceReducer,
     channel:channelSlice,
     activityData:activitySlice,
     channelMessage: channelMessageSlice,

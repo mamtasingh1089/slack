@@ -143,7 +143,7 @@ const HomeRight = () => {
           authHeaders()
         );
 
-        dispatch(setSingleUser(receiver)); // ✅ auto open chat
+        dispatch(setSingleUser(receiver)); 
         navigate(`/home/${receiver._id}`);
       }
 

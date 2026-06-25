@@ -13,7 +13,9 @@ const SlackWelcomePage = () => {
   const dispatch = useDispatch();
 
  
-const allworkspace = useSelector((state) => state.workspace.allworkspace);
+ const allWorkspaces = useSelector(
+    (state) => state.workspace.allWorkspaces
+  );
 
 
  
@@ -25,24 +27,27 @@ const handleSelectWorkspace = (ws) => {
 
   
 useEffect(() => {
-  const fetchWorkspaces = async () => {
-    try {
-      const token = localStorage.getItem("token");
+    const fetchWorkspaces = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      const res = await axios.get(`${serverURL}/api/workspace/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        // ✅ FIXED await
+        const res = await axios.get(`${serverURL}/api/workspace/all`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      dispatch(setAllWorkspaces(res.data.workspaces));
-    } catch (error) {
-      console.error("Failed to fetch workspaces", error);
-    }
-  };
+        console.log("API response:", res.data);
 
-  fetchWorkspaces();
-}, [dispatch]);
+dispatch(setAllWorkspaces(res.data.workspaces || res.data));
+      } catch (error) {
+        console.error("Failed to fetch workspaces", error.response?.data || error.message);
+      }
+    };
+
+    fetchWorkspaces();
+  }, [dispatch]);
 
 
 
@@ -94,8 +99,8 @@ useEffect(() => {
               <p className="text-[11px] font-bold text-gray-500 uppercase mb-4 tracking-tighter">Ready to launch</p>
               <div className="space-y-4">
             
-               {allworkspace && allworkspace.length > 0 ? (
-  allworkspace.map((ws, index) => (
+  {allWorkspaces && allWorkspaces.length > 0 ? (
+        allWorkspaces.map((ws, index) => (
     <div 
       key={ws._id || index}
       onClick={() => handleSelectWorkspace(ws)}

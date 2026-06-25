@@ -193,11 +193,15 @@ export const useWebRTC = (socket, remoteUser) => {
       await pc.setLocalDescription(offer);
 
       // Emit Signal
-      socket.emit("webrtc:start-call", {
-        to: targetUserId,
-        from: currentUser,
-        offer: offer,
-      });
+    socket.emit("webrtc:start-call", {
+  to: targetUserId,
+  from: {
+    _id: currentUser._id,
+    name: currentUser.name,
+    avatar: currentUser.avatar
+  }, 
+  offer: offer,
+});
 
       // Set timeout for no answer
       callTimeoutRef.current = setTimeout(() => {
@@ -264,11 +268,15 @@ export const useWebRTC = (socket, remoteUser) => {
       await pc.setLocalDescription(answer);
 
       // Emit Answer
-      socket.emit("webrtc:answer-call", {
-        to: incomingCallFrom._id,
-        from: currentUser,
-        answer: answer,
-      });
+    socket.emit("webrtc:answer-call", {
+  to: incomingCallFrom._id,
+  from: {
+    _id: currentUser._id,
+    name: currentUser.name,
+    avatar: currentUser.avatar
+  },
+  answer: answer,
+});
 
       // Set state to connected manually here, though connectionstatechange will also handle logic
       setCallState("connected");
@@ -342,6 +350,8 @@ export const useWebRTC = (socket, remoteUser) => {
       console.log("[WebRTC] Call answered");
       if (peerConnectionRef.current) {
         try {
+          const remoteDesc = new RTCSessionDescription(answer);
+      await peerConnectionRef.current.setRemoteDescription(remoteDesc);
           await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
           
           // Process candidates that arrived before answer

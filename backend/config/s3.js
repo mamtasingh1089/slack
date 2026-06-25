@@ -48,10 +48,14 @@ const s3Storage = multerS3({
   bucket: process.env.S3_BUCKET_NAME,
   metadata: (req, file, cb) => cb(null, { fieldName: file.fieldname }),
   key: (req, file, cb) => {
-    const fileName = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}${path.extname(file.originalname)}`;
-    cb(null, `channels/${req.params.channelId || "general"}/images/${fileName}`);
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${path.extname(file.originalname)}`;
+    
+    // Check if we are in a channel context or workspace context
+    const folder = req.params.channelId 
+      ? `channels/${req.params.channelId}/images` 
+      : `workspaces/profiles`;
+      
+    cb(null, `${folder}/${fileName}`);
   },
   contentType: multerS3.AUTO_CONTENT_TYPE,
 });

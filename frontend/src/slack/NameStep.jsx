@@ -36,54 +36,56 @@ const NameStep = () => {
   };
 
   const handleNext = async () => {
-    if (!name.trim()) return;
-    try {
-      setLoading(true);
+  if (!name.trim()) return;
 
-      const token = localStorage.getItem("token");
-      console.log("Token from localStorage:", token);
-      console.log(
-        "Token present?",
-        !!token,
-        "length:",
-        token ? token.length : 0
-      );
-      if (!token) {
-        alert("You are not logged in. Please sign in again.");
-        return;
-      }
+  try {
+    setLoading(true);
 
-const result = await axios.post(
-  `${serverURL}/api/workspace/createworkspace`,
-  { name },
-  {
-    headers: { Authorization: `Bearer ${token}` },
-    withCredentials: true,
-  }
-);
+    const token = localStorage.getItem("token");
+    console.log("Token from localStorage:", token);
 
-const newWorkspace = result.data.workspace;
-dispatch(setWorkspace(newWorkspace));
-// ADD THIS LINE:
-localStorage.setItem("workspace", JSON.stringify(newWorkspace)); 
-
-navigate("/company");
-    } catch (error) {
-      console.error("Failed to create workspace:", error);
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        alert(
-          `Create workspace failed: ${error.response.status} - ${JSON.stringify(
-            error.response.data
-          )}`
-        );
-      } else {
-        alert("Create workspace failed: " + error.message);
-      }
-    } finally {
-      setLoading(false);
+    if (!token) {
+      alert("You are not logged in. Please sign in again.");
+      return;
     }
-  };
+
+    // FormData for image upload
+    const formData = new FormData();
+ formData.append("name", name);
+ if (photoFile) formData.append("profileImage", photoFile);
+
+ const result = await axios.post(
+   `${serverURL}/api/workspace/createworkspace`,
+   formData,
+   {
+     headers: {
+      Authorization: `Bearer ${token}`,
+       // DO NOT set Content-Type manually for multipart/form-data — the browser will set the boundary
+     },
+   }
+ );
+
+    const newWorkspace = result.data.workspace;
+
+    dispatch(setWorkspace(newWorkspace));
+    localStorage.setItem("workspace", JSON.stringify(newWorkspace));
+
+    navigate("/company");
+  } catch (error) {
+    console.error("Failed to create workspace:", error);
+
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      alert(
+        `Create workspace failed: ${error.response.status} - ${error.response.data.message}`
+      );
+    } else {
+      alert("Create workspace failed: " + error.message);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const avatarBgClass = name.trim() ? "bg-[#724875]" : "bg-[#1f1a2a]";
 
@@ -98,7 +100,7 @@ navigate("/company");
           <div
             className={`w-10 h-10 rounded-full text-white border border-[#2f1030] p-2 px-4 font-bold flex items-center justify-center cursor-pointer ${avatarBgClass}`}
           >
-            {name.charAt(0).toUpperCase()}
+           {name ? name.charAt(0).toUpperCase() : "W"}
           </div>
 
           {/* photo button */}

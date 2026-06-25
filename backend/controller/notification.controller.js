@@ -130,6 +130,7 @@ export const getUserNotifications = async (req, res) => {
         .populate("actorId", "name profilePic")  
         .sort({ createdAt: -1 })
         .limit(50);
+        
     res.json({ success: true, notifications });
   } catch (err) {
     console.error("getUserNotifications error:", err);

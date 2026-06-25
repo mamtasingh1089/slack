@@ -89,74 +89,53 @@ export const inviteToWorkspace = async (req, res) => {
 
 export const updateWorkspace = async (req, res) => {
   try {
-    console.log("=== updateWorkspace called ===");
-    console.log("req.userId:", req.userId);
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file ? {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      filename: req.file.filename,
-      path: req.file.path,
-      size: req.file.size,
-      mimetype: req.file.mimetype
-    } : null);
-
     const { id } = req.params;
     const updates = { ...(req.body || {}) };
 
-    // Normalize owners if it comes as an array (FormData sometimes produces array)
+    // 1. Handle the S3 Upload Result
+    if (req.file) {
+      // With multer-s3, the S3 URL is stored in req.file.location
+      updates.profileImage = req.file.location;
+    }
+
+    // Normalize owners if it comes as an array from FormData
     if (updates.owners && Array.isArray(updates.owners)) {
       updates.owners = updates.owners[updates.owners.length - 1];
     }
 
-    if (req.file) {
-      let imageUrl = null;
-      const filePath = req.file.path && path.resolve(req.file.path);
-
-      // Try Cloudinary if configured
-      if (process.env.CLOUD_NAME && process.env.CLOUD_API && process.env.CLOUD_SECRET) {
-        try {
-          const result = await uploadOnCloudinary(filePath);
-          imageUrl = result?.secure_url || result?.url || null;
-        } catch (cloudErr) {
-          console.warn("Cloudinary upload failed:", cloudErr?.message || cloudErr);
-        }
-      }
-
-      // Fallback to local uploads served at /uploads
-      if (!imageUrl) {
-        const filename = req.file.filename || path.basename(filePath || "");
-        imageUrl = `${process.env.SERVER_URL || "http://localhost:1"}/uploads/${filename}`;
-      }
-      updates.profileImage = imageUrl;
-    }
-
-    // Update SlackUser if owners present and req.userId exists
+    // 2. Update SlackUser if owners/name info is present
     if (updates.owners && req.userId) {
       try {
         const ownerName = typeof updates.owners === "string" ? updates.owners : String(updates.owners);
         const userUpdates = { name: ownerName };
-        if (updates.profileImage) userUpdates.profileImage = updates.profileImage;
+        
+        // Sync the profile image to the user as well if updated
+        if (updates.profileImage) {
+          userUpdates.profileImage = updates.profileImage;
+        }
+        
         await SlackUser.findByIdAndUpdate(req.userId, userUpdates, { new: true });
       } catch (userErr) {
-        console.warn("Failed to update SlackUser (non-fatal):", userErr?.message || userErr);
+        console.warn("Failed to update SlackUser (non-fatal):", userErr.message);
       }
     }
 
-    // safety: prevent overwriting owner/members
+    // Safety: prevent overwriting owner/members lists directly via this endpoint
     delete updates.owner;
     delete updates.members;
 
     const workspace = await Workspace.findByIdAndUpdate(id, updates, { new: true });
-    if (!workspace) return res.status(404).json({ message: "Workspace not found" });
+    
+    if (!workspace) {
+      return res.status(404).json({ message: "Workspace not found" });
+    }
 
-    console.log("Workspace updated:", workspace._id.toString(), "profileImage:", workspace.profileImage);
-    return res.json({ success: true, workspace });
+    return res.json({ 
+      success: true, 
+      workspace 
+    });
   } catch (err) {
     console.error("updateWorkspace error:", err.stack || err);
-    if (process.env.NODE_ENV === "development") {
-      return res.status(500).json({ message: "Failed to update workspace", error: err?.message || err, stack: err.stack });
-    }
     return res.status(500).json({ message: "Failed to update workspace" });
   }
 };
@@ -170,10 +149,10 @@ export const getAllWorkspaces = async (req, res) => {
 
     // find workspaces where user is owner or member
     const workspaces = await Workspace.find({
-      $or: [
-        { owner: req.userId },
-        { members: req.userId }
-      ]
+     $or: [
+    { owner: req.userId },
+    { members: req.userId }
+  ]
     }).populate("members", "email name");
 
     return res.status(200).json({ workspaces });
