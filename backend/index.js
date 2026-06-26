@@ -22,13 +22,16 @@ import User from "./models/User.js";
 import draftRouter from "./router/draft.route.js";
 import preferenceRouter from "./router/preference.router.js";
 import startScheduler from "./scheduler.js";
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 app.use(
   cors({
-    origin: [
-      "http://localhost:5174",
-      "http://localhost:5173",
-      // "https://slack-frontend-4.onrender.com"
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -38,7 +41,6 @@ app.use(express.urlencoded({ extended: true }));
 // serve uploads statically so fallback local URLs work
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 const PORT = process.env.PORT || 5001;
-app.get("/", (req, res) => res.send("server is running"));
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/api/user/me", auth, async (req, res) => {
   try {
@@ -63,6 +65,14 @@ app.use("/api/notifications",notificationRouter);
 app.use("/api/files",filterRouter);
 app.use('/api/draft',draftRouter)
 app.use('/api/preferences',preferenceRouter);
+
+const __dirname = path.resolve();
+const frontendDist = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendDist));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendDist, "index.html"));
+});
+
 startScheduler(); 
 connectDB();
 server.listen(PORT, () => {

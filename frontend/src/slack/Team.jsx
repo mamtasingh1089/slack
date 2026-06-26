@@ -11,16 +11,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { setWorkspace } from "../redux/workspaceSlice";
 import axios from "axios";
 
-// ✅ Environment variables safe for CRA and Vite
-const SERVER_URL =
-  (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) ||
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:5001";
-
-const CLIENT_URL =
-  (typeof process !== "undefined" && process.env?.REACT_APP_CLIENT_URL) ||
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_CLIENT_URL) ||
-  "http://localhost:5173";
+const SERVER_URL = import.meta.env.VITE_API_URL || "";
+const CLIENT_URL = import.meta.env.VITE_CLIENT_URL || "";
 
 const Team = () => {
   const navigate = useNavigate();

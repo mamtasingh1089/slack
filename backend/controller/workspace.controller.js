@@ -70,7 +70,7 @@ export const inviteToWorkspace = async (req, res) => {
 
     
       try {
-        const inviteLink = `${process.env.CLIENT_URL || "http://localhost:3000"}/join?workspace=${workspace._id}&email=${encodeURIComponent(email)}`;
+        const inviteLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/join?workspace=${workspace._id}&email=${encodeURIComponent(email)}`;
         await Mail({ to: email, workspaceName: workspace.name, inviteLink });
       } catch (e) {
         console.warn("failed to send invite email for", email, e.message);
