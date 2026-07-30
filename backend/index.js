@@ -69,7 +69,7 @@ app.use('/api/preferences',preferenceRouter);
 const __dirname = path.resolve();
 const frontendDist = path.join(__dirname, "../frontend/dist");
 app.use(express.static(frontendDist));
-app.get("*", (req, res) => {
+app.get("/", (req, res) => {
   res.sendFile(path.join(frontendDist, "index.html"));
 });
 
