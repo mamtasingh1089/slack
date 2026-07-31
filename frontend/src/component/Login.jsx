@@ -1,121 +1,186 @@
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../redux/userSlice";
+import AuthLayout from "./auth/AuthLayout";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Login = () => {
-  const [isActive, setIsActive] = useState(false);
-  const navigate=useNavigate()
-  const [email,setEmail]=useState("")
-  const [password,setPassword]=useState("")
-  const dispatch=useDispatch();
-  const user =useSelector((state)=>state.user.user)
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.user);
 
+  const [email, setEmail] = useState("");
+  const [captchaValue, setCaptchaValue] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log({ email, password });
-  try {
-    const res = await axios.post("/api/user/login", {
-  email,
-  password,
-});
+  const handleCaptchaChange = (value) => {
+    setCaptchaValue(value);
+  };
 
-    const { token, user } = res.data;
-    if (!token || !user) throw new Error("Invalid login response")
-    localStorage.setItem("token", token);
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    dispatch(setUser(user));
-    console.log({ token, user }, "token");
-    navigate("/");
-  } catch (error) {
-    console.error(error);
-  }
-};
- 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+
+    if (!captchaValue) {
+      setErrorMsg("Please complete the reCAPTCHA.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Attempt standard user login first with default fallback password
+      try {
+        const res = await axios.post("/api/user/login", {
+          email,
+          password: "Password123!",
+        });
+
+        const { token, user: loggedUser } = res.data;
+        if (token && loggedUser) {
+          localStorage.setItem("token", token);
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          dispatch(setUser(loggedUser));
+          navigate("/");
+          return;
+        }
+      } catch (err) {
+        console.warn("Standard user login failed, falling back to Slack passwordless flow:", err);
+      }
+
+      // Fallback: Slack login flow (which is passwordless with recaptcha)
+      const res = await axios.post("/api/slack/slacklogin", {
+        email,
+        captcha: captchaValue,
+      });
+
+      const token = res?.data?.token;
+      const loggedUser = res?.data?.user;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+
+      if (loggedUser) {
+        dispatch(setUser(loggedUser));
+      }
+
+      navigate("/");
+    } catch (error) {
+      console.error("Login failure:", error);
+      setErrorMsg(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to sign in. Please verify your email or reCAPTCHA."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
-    
-      <div className="flex flex-row items-center gap-2 mb-6">
-        <img
-          src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png"
-          alt="Slack"
-          className="w-8 h-8"
-        />
-        <p className="font-bold text-2xl">Slack</p>
+    <AuthLayout>
+      {/* Floating Create Account Trigger */}
+      <div className="absolute top-6 right-6 text-sm text-[#5F6F69]">
+        Don't have an account?{" "}
+        <span
+          onClick={() => navigate("/register")}
+          className="text-[#0D8F7A] font-semibold cursor-pointer hover:underline"
+        >
+          Create an account
+        </span>
       </div>
 
-    
-      <h1 className="text-2xl font-bold text-gray-900 text-center">
-        Enter your email address to <br /> register
-      </h1>
-      <p className="text-gray-600 mt-2">Or choose another option</p>
+      {/* Main Content Form Container */}
+      <div className="flex flex-col gap-6 w-full px-4">
+        
+        {/* Welcome Header */}
+        <div className="flex flex-col gap-1.5 text-center mt-8 lg:mt-0">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#16231F]">
+            Enter your email to sign in
+          </h1>
+          <p className="text-[#5F6F69] text-sm mt-1">
+            Or choose another option to sign in.
+          </p>
+        </div>
 
-     
-     
-      <input
-        type="email"
-        placeholder="name@work-email.com"
-        name="email"
-        className="w-full max-w-md h-[45px] mt-5 px-4 rounded-md border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-700"
-        onChange={(e)=>setEmail(e.target.value)}
-        value={email}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        name="password"
-        className="w-full max-w-md h-[45px] mt-5 px-4 rounded-md border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-700"
-        onChange={(e)=>setPassword(e.target.value)}
-        value={password}
-      />
+        {errorMsg && (
+          <div className="p-3 bg-red-50 border border-red-200 text-[#D9534F] rounded-md text-sm text-center">
+            {errorMsg}
+          </div>
+        )}
 
-    
-      <button
-       
-        className="w-full max-w-md h-[45px] mt-5 bg-purple-700 hover:bg-purple-800 text-white font-medium rounded-md"
-        onClick={handleSubmit}
-      >
-        Continoue
-      </button>
+        {user && (
+          <div className="p-3 bg-green-50 border border-green-200 text-[#219B75] rounded-md text-sm text-center">
+            Welcome back, {user.name}!
+          </div>
+        )}
 
-     
-      <div className="flex items-center w-full max-w-md my-6">
-        <div className="flex-grow border-t border-gray-300"></div>
-        <span className="px-3 text-gray-500 text-sm">OTHER OPTIONS</span>
-        <div className="flex-grow border-t border-gray-300"></div>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
+          <input
+            type="email"
+            id="email"
+            placeholder="name@work-email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full h-12 px-4 rounded-md border-2 border-[#0D8F7A] focus:outline-none focus:ring-2 focus:ring-[#087765] bg-white text-[#16231F] font-medium"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full h-12 mt-4 rounded-md text-white font-semibold transition-colors flex items-center justify-center ${
+              loading ? "bg-[#A3E0D6] cursor-not-allowed" : "bg-[#0D8F7A] hover:bg-[#087765]"
+            }`}
+          >
+            {loading ? "Processing..." : "Sign In With Email"}
+          </button>
+
+          {/* reCAPTCHA Checkbox */}
+          <div className="mt-2 flex justify-center w-full">
+            <ReCAPTCHA
+              sitekey="6LcBK8orAAAAAN5v2azDSWpnmI7rfSEj0PMt9hxP"
+              onChange={handleCaptchaChange}
+            />
+          </div>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center w-full my-4">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="px-3 text-gray-500 text-xs font-bold tracking-wider uppercase whitespace-nowrap">
+            Or sign in with
+          </span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        {/* Social Authentication Button - Google Only */}
+        <div className="w-full">
+          <button
+            type="button"
+            className="flex items-center justify-center gap-3 w-full h-12 border border-gray-300 rounded-md text-sm font-semibold text-[#16231F] hover:bg-gray-50 transition-colors"
+          >
+            <FcGoogle className="text-xl" /> Google
+          </button>
+        </div>
+
+        {/* Footer Link */}
+        <div className="text-center mt-6 text-sm">
+          <span className="text-[#5F6F69]">Having trouble? </span>
+          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
+            Try entering a workspace URL
+          </span>
+        </div>
+
       </div>
-
-     
-      <div className="w-full max-w-md flex gap-4">
-        <button className="w-1/2 h-[45px] border border-gray-400 rounded-md font-medium hover:bg-gray-50 flex justify-center items-center gap-2">
-          <FcGoogle className="text-xl" /> Google
-        </button>
-        <button className="w-1/2 h-[45px] border border-gray-400 rounded-md font-medium hover:bg-gray-50 flex justify-center items-center gap-2">
-          <FaApple className="text-xl" /> Apple
-        </button>
-      </div>
-
-     
-      <p className="mt-10 text-gray-600"
-       >Don't have account?</p>
-      <p
-        onClick={() => navigate("/register")}
-        className="text-blue-600 cursor-pointer"
-      >
-        Rigester
-      </p>
-{user && <div>welcome {user.name}</div>}
-      <div className="flex gap-6 mt-10 text-gray-500 text-sm">
-        <p className="cursor-pointer">Privacy & terms</p>
-        <p className="cursor-pointer">Contact us</p>
-        <p className="cursor-pointer">Change region</p>
-      </div>
-    </div>
+    </AuthLayout>
   );
 };
 
