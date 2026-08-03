@@ -13,6 +13,7 @@ import { addMessage ,incrementReplyCount} from "./redux/messageSlice";
 import { setAllChannels } from "./redux/channelSlice";
 import Registration from "./component/Registration";
 import Login from "./component/Login";
+import SharedAuthLayout from "./component/auth/SharedAuthLayout";
 import Home from "./component/Home";
 import Right from "./pages/Right";
 import Channel from "./component/channelPage/Channel.jsx";
@@ -313,8 +314,10 @@ socketIo.on("notification", (notificationPayload) => {
       </Route>
 
   
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
-      <Route path="/register" element={!user ? <Registration /> : <Navigate to="/" replace />} />
+      <Route element={<SharedAuthLayout />}>
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
+        <Route path="/register" element={!user ? <Registration /> : <Navigate to="/" replace />} />
+      </Route>
       {/* <Route
         path="/room/:roomID"
         element={user ? <VideoRoom /> : <Navigate to="/login" replace />}
