@@ -11,6 +11,7 @@ const Registration = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.user.user);
 
   const navigate = useNavigate();
@@ -18,7 +19,8 @@ const Registration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); 
+    setError("");
+    setLoading(true);
 
     try {
       const result = await axios.post("/api/user/register", {
@@ -26,108 +28,135 @@ const Registration = () => {
         email,
         password,
       });
-const { token, user } = result.data;
-localStorage.setItem("token", token);
-axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-dispatch(setUser(user));
-navigate("/");
+      const { token, user } = result.data;
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      dispatch(setUser(user));
+      navigate("/");
     } catch (err) {
       const msg = err.response?.data?.message || "Registration failed";
       setError(msg);
       console.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
-      {/* Logo */}
-      <div className="flex flex-row items-center gap-2 mb-6">
-        <img
-          src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png"
-          alt="Slack"
-          className="w-8 h-8"
-        />
-        <p className="font-bold text-2xl">Slack</p>
-      </div>
-
-      <h1 className="text-2xl font-bold text-gray-900 text-center">
-        Enter your email address to <br /> register
-      </h1>
-      <p className="text-gray-600 mt-2">Or choose another option</p>
-
-      
-      <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col">
-        <input
-          type="text"
-          placeholder="Name"
-          className="h-[45px] mt-5 px-4 rounded-md border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-700"
-          onChange={(e) => setName(e.target.value)}
-          value={name}
-          required
-        />
-        <input
-          type="email"
-          placeholder="name@work-email.com"
-          className="h-[45px] mt-5 px-4 rounded-md border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-700"
-          onChange={(e) => setEmail(e.target.value)}
-          value={email}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="h-[45px] mt-5 px-4 rounded-md border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-700"
-          onChange={(e) => setPassword(e.target.value)}
-          value={password}
-          required
-        />
-
-        <button
-          type="submit"
-          className="h-[45px] mt-5 bg-[#703578] text-white font-medium rounded-md"
+    <>
+      {/* Floating Sign In Trigger */}
+      <div className="absolute top-6 right-6 text-sm text-[#5F6F69]">
+        Already have an account?{" "}
+        <span
+          onClick={() => navigate("/login")}
+          className="text-[#0D8F7A] font-semibold cursor-pointer hover:underline"
         >
-          Register
-        </button>
-      </form>
-
-    
-      {error && <p className="text-red-600 mt-3">{error}</p>}
-
-      {/* Success Info */}
-      {user && <div className="mt-3">Welcome, {user.name}</div>}
-
-      {/* Divider */}
-      <div className="flex items-center w-full max-w-md my-6">
-        <div className="flex-grow border-t border-gray-300"></div>
-        <span className="px-3 text-gray-500 text-sm">OTHER OPTIONS</span>
-        <div className="flex-grow border-t border-gray-300"></div>
+          Sign in
+        </span>
       </div>
 
-      {/* Social Buttons */}
-      <div className="w-full max-w-md flex gap-4">
-        <button className="w-1/2 h-[45px] border border-gray-400 rounded-md font-medium hover:bg-gray-50 flex justify-center items-center gap-2">
-          <FcGoogle className="text-xl" /> Google
-        </button>
-        <button className="w-1/2 h-[45px] border border-gray-400 rounded-md font-medium hover:bg-gray-50 flex justify-center items-center gap-2">
-          <FaApple className="text-xl" /> Apple
-        </button>
-      </div>
+      {/* Main Content Form Container */}
+      <div className="flex flex-col gap-6 w-full px-4">
+        
+        {/* Welcome Header */}
+        <div className="flex flex-col gap-1.5 text-center mt-8 lg:mt-0">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#16231F]">
+            Create your nineAm account
+          </h1>
+          <p className="text-[#5F6F69] text-sm mt-1">
+            Or choose another option to get started.
+          </p>
+        </div>
 
-      {/* Footer Links */}
-      <p className="mt-10 text-gray-600">Already using Slack?</p>
-      <p
-        onClick={() => navigate("/login")}
-        className="text-blue-600 cursor-pointer"
-      >
-        Sign in to an existing workspace
-      </p>
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 text-[#D9534F] rounded-md text-sm text-center">
+            {error}
+          </div>
+        )}
 
-      <div className="flex gap-6 mt-10 text-gray-500 text-sm">
-        <p className="cursor-pointer">Privacy & terms</p>
-        <p className="cursor-pointer">Contact us</p>
-        <p className="cursor-pointer">Change region</p>
+        {user && (
+          <div className="p-3 bg-green-50 border border-green-200 text-[#219B75] rounded-md text-sm text-center">
+            Welcome, {user.name}!
+          </div>
+        )}
+
+        {/* Registration Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
+          <input
+            type="text"
+            id="name"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full h-12 px-4 rounded-md border-2 border-[#0D8F7A] focus:outline-none focus:ring-2 focus:ring-[#087765] bg-white text-[#16231F] font-medium"
+          />
+
+          <input
+            type="email"
+            id="email"
+            placeholder="name@work-email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full h-12 px-4 rounded-md border-2 border-[#0D8F7A] focus:outline-none focus:ring-2 focus:ring-[#087765] bg-white text-[#16231F] font-medium"
+          />
+
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full h-12 px-4 rounded-md border-2 border-[#0D8F7A] focus:outline-none focus:ring-2 focus:ring-[#087765] bg-white text-[#16231F] font-medium"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full h-12 mt-4 rounded-md text-white font-semibold transition-colors flex items-center justify-center ${
+              loading ? "bg-[#A3E0D6] cursor-not-allowed" : "bg-[#0D8F7A] hover:bg-[#087765]"
+            }`}
+          >
+            {loading ? "Processing..." : "Register"}
+          </button>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center w-full my-4">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="px-3 text-gray-500 text-xs font-bold tracking-wider uppercase whitespace-nowrap">
+            Or register with
+          </span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        {/* Social Authentication Buttons - Google & Apple */}
+        <div className="flex gap-4 w-full">
+          <button
+            type="button"
+            className="flex items-center justify-center gap-3 w-1/2 h-12 border border-gray-300 rounded-md text-sm font-semibold text-[#16231F] hover:bg-gray-50 transition-colors"
+          >
+            <FcGoogle className="text-xl" /> Google
+          </button>
+          <button
+            type="button"
+            className="flex items-center justify-center gap-3 w-1/2 h-12 border border-gray-300 rounded-md text-sm font-semibold text-[#16231F] hover:bg-gray-50 transition-colors"
+          >
+            <FaApple className="text-xl" /> Apple
+          </button>
+        </div>
+
+        {/* Footer Links */}
+        <div className="flex justify-center gap-6 mt-8 text-[#5F6F69] text-xs">
+          <span className="cursor-pointer hover:underline">Privacy & terms</span>
+          <span className="cursor-pointer hover:underline">Contact us</span>
+          <span className="cursor-pointer hover:underline">Change region</span>
+        </div>
+
       </div>
-    </div>
+    </>
   );
 };
 

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../redux/userSlice";
-import AuthLayout from "./auth/AuthLayout";
 import ReCAPTCHA from "react-google-recaptcha";
 
 const Login = () => {
@@ -84,7 +83,7 @@ const Login = () => {
   };
 
   return (
-    <AuthLayout>
+    <>
       {/* Floating Create Account Trigger */}
       <div className="absolute top-6 right-6 text-sm text-[#5F6F69]">
         Don't have an account?{" "}
@@ -180,7 +179,7 @@ const Login = () => {
         </div>
 
       </div>
-    </AuthLayout>
+    </>
   );
 };
 
