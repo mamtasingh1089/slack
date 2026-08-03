@@ -5,7 +5,7 @@ dotenv.config();
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
-import connectDB from "./config/db.js";
+import connectDB from "./config/mongoDb.js";
 import userRouter from "./router/user.route.js";
 import conversationRoute from "./router/conversation.route.js";
 import messageRoute from "./router/message.route.js";
