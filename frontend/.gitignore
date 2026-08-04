@@ -9,7 +9,8 @@ lerna-debug.log*
 
 node_modules
 .env
-/frontend/.env
+frontend/.env
+frontend/.env.*
 package-lock.json
 dist
 dist-ssr
