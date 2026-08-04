@@ -4,11 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../redux/userSlice";
-<<<<<<< HEAD
-import { serverURL } from '../main';
-=======
 import ReCAPTCHA from "react-google-recaptcha";
->>>>>>> anshul
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,82 +16,115 @@ const Login = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-<<<<<<< HEAD
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log({ email, password });
-  try {
-    const res = await axios.post(`${serverURL}/api/user/login`, {
-  email,
-  password,
-});
-=======
   const handleCaptchaChange = (value) => {
     setCaptchaValue(value);
   };
->>>>>>> anshul
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setErrorMsg("");
 
-    if (!captchaValue) {
-      setErrorMsg("Please complete the reCAPTCHA.");
-      return;
-    }
+  //   if (!captchaValue) {
+  //     setErrorMsg("Please complete the reCAPTCHA.");
+  //     return;
+  //   }
 
-    try {
-      setLoading(true);
+  //   try {
+  //     setLoading(true);
 
-      // Attempt standard user login first with default fallback password
-      try {
-        const res = await axios.post("/api/user/login", {
-          email,
-          password: "Password123!",
-        });
+  //     // Attempt standard user login first with default fallback password
+  //     try {
+  //       const res = await axios.post("/api/nineAm_user/nineAm_Login", {
+  //         email,
+  //         password: "Password123!",
+  //       });
 
-        const { token, user: loggedUser } = res.data;
-        if (token && loggedUser) {
-          localStorage.setItem("token", token);
-          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          dispatch(setUser(loggedUser));
-          navigate("/");
-          return;
-        }
-      } catch (err) {
-        console.warn("Standard user login failed, falling back to Slack passwordless flow:", err);
-      }
+  //       const { token, user: loggedUser } = res.data;
+  //       if (token && loggedUser) {
+  //         localStorage.setItem("token", token);
+  //         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  //         dispatch(setUser(loggedUser));
+  //         navigate("/");
+  //         return;
+  //       }
+  //     } catch (err) {
+  //       console.warn("Standard user login failed, falling back to Slack passwordless flow:", err);
+  //     }
 
-      // Fallback: Slack login flow (which is passwordless with recaptcha)
-      const res = await axios.post("/api/slack/slacklogin", {
-        email,
-        captcha: captchaValue,
-      });
+  //     // Fallback: Slack login flow (which is passwordless with recaptcha)
+  //     const res = await axios.post("/api/nineAm_user/nineAm_Login", {
+  //       email,
+  //       captcha: captchaValue,
+  //     });
 
-      const token = res?.data?.token;
-      const loggedUser = res?.data?.user;
+  //     const token = res?.data?.token;
+  //     const loggedUser = res?.data?.user;
 
-      if (token) {
-        localStorage.setItem("token", token);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      }
+  //     if (token) {
+  //       localStorage.setItem("token", token);
+  //       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  //     }
 
-      if (loggedUser) {
-        dispatch(setUser(loggedUser));
-      }
+  //     if (loggedUser) {
+  //       dispatch(setUser(loggedUser));
+  //     }
 
-      navigate("/");
-    } catch (error) {
-      console.error("Login failure:", error);
-      setErrorMsg(
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Failed to sign in. Please verify your email or reCAPTCHA."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     navigate("/");
+  //   } catch (error) {
+  //     console.error("Login failure:", error);
+  //     setErrorMsg(
+  //       error.response?.data?.message ||
+  //       error.response?.data?.error ||
+  //       "Failed to sign in. Please verify your email or reCAPTCHA."
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setErrorMsg("");
+  if (!email.trim()) {
+    setErrorMsg("Email is required");
+    return;
+  }
+  if (!captchaValue) {
+    setErrorMsg("Please complete the reCAPTCHA.");
+    return;
+  }
+  try {
+    setLoading(true);
+    // Payload
+    const payload = {
+      email: email.trim().toLowerCase(),
+      captcha: captchaValue,
+    };
+    //console.log
+    console.log(payload);
+   // return;
+    const { data } = await axios.post(
+      "/api/nineAm_user/nineAm_Login",
+      payload
+    );
+    console.log
+    console.log(data);
+    navigate("/verify-otp", {
+      state: {
+        email: payload.email,
+      },
+    });
+  } catch (error) {
+    console.log
+    console.log(error.response);
+    setErrorMsg(
+      error.response?.data?.message ||
+      "Unable to send OTP."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>
@@ -139,11 +168,12 @@ const handleSubmit = async (e) => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
           <input
             type="email"
-            id="email"
-            placeholder="name@work-email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+  id="email"
+  value={email}
+  disabled={loading}
+  onChange={(e) => setEmail(e.target.value)}
+  placeholder="name@work-email.com"
+  required
             className="w-full h-12 px-4 rounded-md border-2 border-[#0D8F7A] focus:outline-none focus:ring-2 focus:ring-[#087765] bg-white text-[#16231F] font-medium"
           />
 
@@ -160,7 +190,7 @@ const handleSubmit = async (e) => {
           {/* reCAPTCHA Checkbox */}
           <div className="mt-2 flex justify-center w-full">
             <ReCAPTCHA
-              sitekey="6LcBK8orAAAAAN5v2azDSWpnmI7rfSEj0PMt9hxP"
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
               onChange={handleCaptchaChange}
             />
           </div>

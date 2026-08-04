@@ -316,7 +316,7 @@ socketIo.on("notification", (notificationPayload) => {
   
       <Route element={<SharedAuthLayout />}>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
-        <Route path="/register" element={!user ? <Registration /> : <Navigate to="/" replace />} />
+        <Route path="/register" element={!user ? <Registration /> : <Navigate to="/login" replace />} />
       </Route>
       {/* <Route
         path="/room/:roomID"

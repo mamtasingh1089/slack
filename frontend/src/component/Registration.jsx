@@ -24,7 +24,7 @@ const Registration = () => {
     setLoading(true);
 
     try {
-      const result = await axios.post(`${serverURL}/api/user/register`, {
+      const result = await axios.post(`${serverURL}/api/nineAm_user/signin`, {
         name,
         email,
         password,
