@@ -1,7 +1,7 @@
 //import SlackUser from "../models/slackUser.model.js";
 import jwt from "jsonwebtoken";
 import axios from "axios";
-import { sendOtpEmail } from "../config/sendOtpEmail.js";
+import { sendOtpEmail } from "../config/sendOtpEmail1.js";
 import pool from '../config/postgreDb.js'
 import prisma from "../config/prisma.js";
 
@@ -151,12 +151,13 @@ export const SendOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const result = await pool.query(
-      "SELECT * FROM nineAm_users WHERE email = $1",
-      [email]
-    );
+    const user = await prisma.nineAmUser.findUnique({
+      where: {
+        email,
+      },
+    });
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({
         message: "User not found",
       });
@@ -166,15 +167,15 @@ export const SendOtp = async (req, res) => {
 
     const otpExpiry = new Date(Date.now() + 60 * 1000);
 
-    await pool.query(
-      `
-      UPDATE nineAm_users
-      SET otp = $1,
-          otp_expiry = $2
-      WHERE email = $3
-      `,
-      [otp, otpExpiry, email]
-    );
+    await prisma.nineAmUser.update({
+      where: {
+        email,
+      },
+      data: {
+        otp,
+        otpExpiry,
+      },
+    });
 
     await sendOtpEmail({
       to: email,
@@ -199,45 +200,45 @@ export const VerifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const result = await pool.query(
-      "SELECT * FROM nineAm_users WHERE email = $1",
-      [email]
-    );
+    const user = await prisma.nineAmUser.findUnique({
+      where: {
+        email,
+      },
+    });
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({
         message: "User not found",
       });
     }
 
-    const user = result.rows[0];
-
     if (
       user.otp !== otp ||
-      new Date() > new Date(user.otp_expiry)
+      !user.otpExpiry ||
+      new Date() > user.otpExpiry
     ) {
       return res.status(400).json({
         message: "Invalid or expired OTP",
       });
     }
 
-    await pool.query(
-      `
-      UPDATE nineAm_users
-      SET otp = NULL,
-          otp_expiry = NULL
-      WHERE id = $1
-      `,
-      [user.id]
-    );
+    const updatedUser = await prisma.nineAmUser.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        otp: null,
+        otpExpiry: null,
+      },
+    });
 
-    const token = createToken(user);
+    const token = createToken(updatedUser);
 
     return res.status(200).json({
       success: true,
       message: "OTP verified, login successful",
       token,
-      user,
+      user: updatedUser,
     });
   } catch (error) {
     console.error("VerifyOtp Error:", error);
