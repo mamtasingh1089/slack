@@ -4,6 +4,7 @@ import { motion, useReducedMotion, useMotionValue, useSpring, useTransform, Anim
 // Import all SVG assets from 9Amfigma
 import AM from "../../assets/9Amfigma/AM.svg";
 import BoyGirl from "../../assets/9Amfigma/Boy_Girl.svg";
+import BoyGirl2 from "../../assets/9Amfigma/boy_girl2.png";
 import City from "../../assets/9Amfigma/city.svg";
 import Sun from "../../assets/9Amfigma/sun.svg";
 import FirstHill from "../../assets/9Amfigma/firsthill.svg";
@@ -136,7 +137,7 @@ const SharedAuthBrandPanel = ({ isRegister = false }) => {
         {/* Left Column: Giant "9" Illustration */}
         <div className="w-[190px] xl:w-[230px] flex-shrink-0">
           <img
-            src={BoyGirl}
+            src={BoyGirl2}
             alt="9AM Work Illustration"
             className="w-full h-auto object-contain"
           />
