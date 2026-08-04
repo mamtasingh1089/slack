@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import axios from "axios";
 import { sendOtpEmail } from "../config/sendOtpEmail.js";
 import pool from '../config/postgreDb.js'
+import prisma from "../config/prisma.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 const RECAPTCHA_SECRET = process.env.SECRET_KEY;
@@ -25,49 +26,55 @@ export const Signin = async (req, res) => {
     let { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({
+        message: "Email is required",
+      });
     }
 
     email = email.toLowerCase().trim();
 
     if (!isValidEmail(email)) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({
+        message: "Invalid email",
+      });
     }
 
     // Check if user already exists
-    const existingUser = await pool.query(
-      "SELECT * FROM nineAm_users WHERE email = $1",
-      [email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // Insert new user
-    const newUser = await pool.query(
-      `
-      INSERT INTO nineAm_users
-      (email, team_name, name, profile, created_at)
-      VALUES ($1, '', '', '', NOW())
-      RETURNING *;
-      `,
-      [email]
-    );
-
-    const nineAm_user = newUser.rows[0];
-
-    const token = createToken(nineAm_user);
-
-    return res.status(201).json({
-      message: "User created",
-      user: nineAm_user,
-      token,
+    const existingUser = await prisma.nineAmUser.findUnique({
+      where: {
+        email,
+      },
     });
 
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    // Create new user
+    const newUser = await prisma.nineAmUser.create({
+      data: {
+        email,
+        name: "",
+        teamName: "",
+        profile: "",
+      },
+    });
+
+    const token = createToken(newUser);
+
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user: newUser,
+      token,
+    });
   } catch (error) {
-    console.error("Signin error:", error);
+    console.error("Signin Error:", error);
+
     return res.status(500).json({
+      success: false,
       message: "Signin failed",
     });
   }
@@ -78,17 +85,23 @@ export const nineAm_Login = async (req, res) => {
     let { email, captcha } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({
+        message: "Email is required",
+      });
     }
 
     email = email.toLowerCase().trim();
 
     if (!isValidEmail(email)) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({
+        message: "Invalid email",
+      });
     }
 
     if (!captcha) {
-      return res.status(400).json({ message: "Captcha required" });
+      return res.status(400).json({
+        message: "Captcha required",
+      });
     }
 
     // Verify Google reCAPTCHA
@@ -97,35 +110,38 @@ export const nineAm_Login = async (req, res) => {
     const { data } = await axios.post(verifyURL);
 
     if (!data.success) {
-      return res
-        .status(400)
-        .json({ message: "Captcha verification failed" });
+      return res.status(400).json({
+        message: "Captcha verification failed",
+      });
     }
 
-    // Find user in PostgreSQL
-    const result = await pool.query(
-      "SELECT * FROM nineAm_users WHERE email = $1",
-      [email]
-    );
+    // Find user using Prisma
+    const user = await prisma.nineAmUser.findUnique({
+      where: {
+        email,
+      },
+    });
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Email not found" });
+    if (!user) {
+      return res.status(404).json({
+        message: "Email not found",
+      });
     }
-
-    const user = result.rows[0];
 
     // Generate JWT
     const token = createToken(user);
 
     return res.status(200).json({
+      success: true,
       message: "Login successful",
       user,
       token,
     });
-
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Login Error:", error);
+
     return res.status(500).json({
+      success: false,
       message: "Login failed",
     });
   }
